@@ -1,14 +1,15 @@
 import React from "react";
 
-import { Button, Table, Icon, Card, Input } from "react-materialize";
+import { Button, Table, Icon, Card, Input, Row } from "react-materialize";
 
 import axios from 'axios'
 
 import AddItem from './../addItem/addItem'
 
-//const URL = 'https://todo-jsf-spring.herokuapp.com/item';
-const URL = 'http://localhost:8080/item';
+import URL from "./../urlservice"
 
+const filterActive = (item) => item.status === false
+const filterCompleted = (item) => item.status === true
 
 export default class Home extends React.Component {
 
@@ -16,6 +17,7 @@ export default class Home extends React.Component {
           super(props);
           this.state = {
                items: [],
+               itemsFilted: [],
                isLoading: true
           };
      }
@@ -26,7 +28,6 @@ export default class Home extends React.Component {
                isLoading: false
           })
      }
-
 
      componentDidMount() {
           const date = localStorage.getItem('itemsDate');
@@ -48,14 +49,34 @@ export default class Home extends React.Component {
 
 
      fetchData() {
-
           axios.get(URL).then(res => {
                const items = res.data;
-               this.setState({ items, isLoading: false });
+               this.setState({ items, itemsFilted: items, isLoading: false });
           }).catch(error => console.log('parsing failed', error))
 
           console.log(this.state.items)
           return this.state.items
+     }
+
+     fetchDataFilted(filter) {
+
+          console.log(filter)
+          console.log(this.itemsFilted + "AQQQQ")
+
+          let array = this.state.items
+
+          if (filter === 0) {
+               this.fetchData()
+          } else if (filter === 1) {
+               let arrayAtived = array.filter(filterActive);
+               this.setState({ itemsFilted: arrayAtived });
+          } else if (filter === 2) {
+               let arrayCompleted = array.filter(filterCompleted);
+               this.setState({ itemsFilted: arrayCompleted });
+          }
+
+
+          console.log(this.state.items + "ARRAY")
      }
 
      async remove(id) {
@@ -70,10 +91,18 @@ export default class Home extends React.Component {
           });
      }
 
+
+     async cleanCompletedItems() {
+          this.state.items.forEach(item => {
+               if (item.status)
+                    this.remove(item.id)
+          });
+     }
+
      async setStatus(item) {
           console.log(item);
 
-          if(item.status)
+          if (item.status)
                item.status = false
           else
                item.status = true
@@ -96,6 +125,39 @@ export default class Home extends React.Component {
           localStorage.setItem('itemsDate', Date.now());
      }
 
+     renderQtdItemAtivos() {
+
+          let sizeList = this.state.items.filter(filterActive).length;
+          let sizeListCompleted = this.state.items.filter(filterCompleted).length;//Tamanho da Lista de items completados
+
+          return (
+               this.componentToolBarFilter(sizeList, sizeListCompleted)
+          )
+
+     }
+
+     componentToolBarFilter(sizeList, sizeListCompleted) {
+          return (
+               <Row>
+                    <span>Há {sizeList} item(s) restantes</span>
+                    <Button id="btnGroupFilter" className='btn-flat' waves='light' onClick={() => this.fetchDataFilted(0)} >Todos</Button>
+                    <Button id="btnGroupFilter" className='btn-flat' waves='light' onClick={() => this.fetchDataFilted(1)} >Ativos</Button>
+                    <Button id="btnGroupFilter" className='btn-flat' waves='light' onClick={() => this.fetchDataFilted(2)} >Completados</Button>
+                    {this.componentClear(sizeListCompleted)}
+               </Row>
+          )
+     }
+
+     componentClear(sizeListCompleted) {
+          if (sizeListCompleted > 0) {
+               return (
+                    <Button id="btnClean" s={1} className='btn-flat' waves='light' onClick={() => this.cleanCompletedItems()} >Limpar itens completados</Button>
+               )
+          } else {
+               return null
+          }
+     }
+
 
      render() {
           return (
@@ -114,10 +176,10 @@ export default class Home extends React.Component {
                               </thead>
 
                               <tbody>
-                                   {this.state.items.map(item =>
+                                   {this.state.itemsFilted.map(item =>
                                         <tr key={item.id}>
-                                             <td> <Input name='group1' type='checkbox' checked={item.status} label=' ' onClick={()=>this.setStatus(item)}/> </td>
-                                             <td> {item.nome}</td>
+                                             <td> <Input name='group1' type='checkbox' checked={item.status} label=' ' onClick={() => this.setStatus(item)} /> </td>
+                                             <td> {item.nome} </td>
                                              <td>
                                                   <Button className='btn-flat' onClick={() => this.remove(item.id)} size="sm">
                                                        <Icon >delete</Icon>
@@ -127,6 +189,8 @@ export default class Home extends React.Component {
                                    )}
                               </tbody>
                          </Table>
+                         <hr />
+                         {this.renderQtdItemAtivos()}
                     </Card>
                </div>
           );

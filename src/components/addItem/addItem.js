@@ -1,10 +1,8 @@
 import React from "react";
 
-import qs from "qs";
+import { Input, Row, Button } from "react-materialize";
 
-import { Input, Row, Button, Icon } from "react-materialize";
-
-import axios from 'axios'
+import URL from "./../urlservice"
 
 export default class AddItem extends React.Component {
 
@@ -42,7 +40,7 @@ export default class AddItem extends React.Component {
 
           console.log(item);
 
-          await fetch('http://localhost:8080/item', {
+          await fetch(URL, {
                method: 'POST',
                headers: {
                     'Accept': 'application/json',
