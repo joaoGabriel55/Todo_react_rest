@@ -13,13 +13,21 @@ const filterCompleted = (item) => item.status === true
 
 export default class Home extends React.Component {
 
+     initItem = {
+          nome: '',
+          status: false
+     };
+
      constructor(props) {
           super(props);
           this.state = {
                items: [],
                itemsFilted: [],
-               isLoading: true
+               isLoading: true,
+               item: this.initItem
           };
+          this.handleChange = this.handleChange.bind(this);
+          this.handleSubmit = this.handleSubmit.bind(this);
      }
 
      componentWillMount() {
@@ -130,9 +138,13 @@ export default class Home extends React.Component {
           let sizeList = this.state.items.filter(filterActive).length;
           let sizeListCompleted = this.state.items.filter(filterCompleted).length;//Tamanho da Lista de items completados
 
-          return (
-               this.componentToolBarFilter(sizeList, sizeListCompleted)
-          )
+          if (this.state.items.length !== 0) {
+               return (
+                    this.componentToolBarFilter(sizeList, sizeListCompleted)
+               )
+          } else {
+               return null
+          }
 
      }
 
@@ -159,12 +171,46 @@ export default class Home extends React.Component {
      }
 
 
+     async handleSubmit(event) {
+          event.preventDefault();
+          const item = this.state.item;
+
+          console.log(item);
+
+          await fetch(URL, {
+               method: 'POST',
+               headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+               },
+               body: JSON.stringify(item),
+          }).then(res => {
+               this.setState({item: this.initItem})
+               this.fetchData()
+               console.log(res.status)
+          });
+     }
+
+     handleChange(event) {
+          const target = event.target;
+          const value = target.value;
+
+          console.log(value)
+
+          const item = {
+               nome: value,
+               status: false
+          }
+          this.setState({ item });
+          console.log(this.state.item)
+     }
+
      render() {
           return (
                <div>
                     <br />
                     <Card className='white' textClassName='white' >
-                         <AddItem />
+                         <AddItem onSubmit={this.handleSubmit} onChange={this.handleChange} item={this.state.item} />
 
                          <Table>
                               <thead>
